@@ -9,6 +9,8 @@ import {
   Row,
   Col,
   Input,
+  Alert,
+  Divider,
 } from "antd";
 import dayjs from "dayjs";
 import "antd/dist/reset.css";
@@ -18,15 +20,16 @@ import {
   Route,
   Navigate,
   useLocation,
-} from "react-router-dom"; // Importa react-router-dom
+} from "react-router-dom";
 import { decryptToken, getDataCarrier, validateAviableTime } from "./services";
 import { availableTimes } from "./utils";
+import matusColor from "./assets/matuscolor.png";
 
 const { Text } = Typography;
 
 function TransportApp() {
   const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedTime, setSelectedTime] = useState(null);
+  const [selectedTimes, setSelectedTimes] = useState([]);
   const [tokenDecrypted, setTokenDecrypted] = useState({
     status: false,
     lote: null,
@@ -147,10 +150,25 @@ function TransportApp() {
     }
   }, [selectedDate, tokenDecrypted]);
 
+  const onSelectedTime = (time) => {
+    if (selectedTimes.includes(time)) {
+      setSelectedTimes(selectedTimes.filter((item) => item !== time));
+    } else {
+      setSelectedTimes([...selectedTimes, time]);
+    }
+  };
 
   return (
-    <div style={{ maxWidth: "80%", margin: "auto", padding: 20 }}>
+    <div style={{ maxWidth: "80%", margin: "auto", padding: 20 }}> 
       <Card bordered>
+
+        {/* Header */}
+        <Row justify="center">
+          <Col span={24} style={{ textAlign: "center" }}>
+            <img src={matusColor} alt="Matus" style={{ width: 200 }} />
+          </Col>
+        </Row>
+        <Divider />
         <Row gutter={16} align="middle">
           {/* Carrier Information */}
           <Col span={6}>
@@ -233,21 +251,20 @@ function TransportApp() {
                   let buttonType = "default";
                   if (!availableTimesFiltered.includes(time)) {
                     buttonType = "dashed";
-                  } else if (selectedTime === time) {
+                  } else if (selectedTimes.includes(time)) {
                     buttonType = "primary";
                   }
 
                   return (
                     <Button
-                      // necesito desabilitar los botones que no esten en el array de availableTimesFiltered validando que en el array las horas de las 7 a las 9:54 vienen con un solo y en el array de availableTimes vienen con dos digitos la hora
                       disabled={!availableTimesFiltered.includes(time)}
                       key={time}
                       type={buttonType}
-                      onClick={() => setSelectedTime(time)}
+                      onClick={() => onSelectedTime(time)}
                       style={{
                         width: "100%",
                         textAlign: "center",
-                        }}
+                      }}
                     >
                       {time}
                     </Button>
@@ -259,11 +276,11 @@ function TransportApp() {
         </Row>
 
         {/* Selected Appointment Summary */}
-        {selectedDate && selectedTime && (
+        {selectedDate && selectedTimes?.length > 0 && (
           <Card style={{ marginTop: 20, textAlign: "center" }}>
             <Text strong>Selected Appointment:</Text>
             <p>
-              {selectedDate.format("DD/MM/YYYY")} at {selectedTime}
+              {selectedDate.format("DD/MM/YYYY")} at {selectedTimes.join(", ")}
             </p>
             <Button type="primary">Confirm Appointment</Button>
           </Card>

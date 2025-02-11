@@ -13,9 +13,14 @@ export const getDataCarrier = async (idCarrier) => {
   return response.json();
 };
 
-
 export const validateAviableTime = async (idOrigin, date) => {
   const endpoint = `${server}Public/transporteCita/${idOrigin}/${date}`;
   const response = await ApiService.get(endpoint);
   return response.json();
 }
+
+export const saveAppointment = async (data) => {
+  const endpoint = `${server}Public/transporteCita`;
+  const response = await ApiService.post(endpoint, data);
+  return response.json();
+};
