@@ -1,5 +1,5 @@
 import "./App.css";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   DatePicker,
   Button,
@@ -9,8 +9,8 @@ import {
   Row,
   Col,
   Input,
-  Alert,
   Divider,
+  Table,
 } from "antd";
 import dayjs from "dayjs";
 import "antd/dist/reset.css";
@@ -22,7 +22,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { decryptToken, getDataCarrier, validateAviableTime } from "./services";
-import { availableTimes } from "./utils";
+import { availableTimes, headerTable, columnsTableAppointment } from "./utils";
 import matusColor from "./assets/matuscolor.png";
 
 const { Text } = Typography;
@@ -30,6 +30,8 @@ const { Text } = Typography;
 function TransportApp() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTimes, setSelectedTimes] = useState([]);
+  const [dataLotAndDateTimes, setDataLotAndDateTimes] = useState([]);
+
   const [tokenDecrypted, setTokenDecrypted] = useState({
     status: false,
     lote: null,
@@ -44,8 +46,7 @@ function TransportApp() {
     messageErrorTime: null,
   });
   const [dataCarrier, setDataCarrier] = useState(null);
-  const [quantity, setQuantity] = useState(null);
-  const [description, setDescription] = useState(null);
+  const [numberLote, setNumberLote] = useState(null);
   const [availableTimesFiltered, setAvailableTimesFiltered] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isLoadedTime, setIsLoadedTime] = useState(false);
@@ -53,11 +54,10 @@ function TransportApp() {
 
   const queryParam = new URLSearchParams(location.search);
   const token = queryParam.get("token");
-
-  console.log(token, "token");
-
+  const [dataSource, setDataSource] = useState([]);
+  const [nextLote, setNextLote] = useState(null);
   useEffect(() => {
-    if (token) {
+    if (token && dataSource.length === 0) {
       decryptToken(token)
         .then((dataDescryp) => {
           const { status, data } = dataDescryp;
@@ -71,7 +71,8 @@ function TransportApp() {
             type,
             idOrigin,
           });
-          setDescription(lote);
+          //mandar el lote al array de data
+          setDataSource([...dataSource, { key: 1, lote }]);
           setError({
             status: false,
             messageErrorDecrypt: null,
@@ -89,7 +90,7 @@ function TransportApp() {
           setIsLoaded(false);
         });
     }
-  }, [token]);
+  }, [token, dataSource]);
 
   useEffect(() => {
     if (tokenDecrypted.status) {
@@ -158,20 +159,65 @@ function TransportApp() {
     }
   };
 
-  return (
-    <div style={{ maxWidth: "80%", margin: "auto", padding: 20 }}> 
-      <Card bordered>
+  const addLot = () => {
+    if (numberLote) {
+      setDataSource([
+        ...dataSource,
+        { key: dataSource.length + 1, lote: numberLote },
+      ]);
+      setNumberLote(null);
+      getNextLote();
+    }
+  };
 
+
+  const getNextLote = useCallback(() => {
+    const lote = dataSource.find((item) => {
+      return !dataLotAndDateTimes.find(
+        (itemData) => itemData.lote === item.lote
+      );
+    });
+    setNextLote(lote);
+  }, [dataSource, dataLotAndDateTimes]);
+
+  const columns = headerTable(setDataSource, setSelectedTimes, setDataLotAndDateTimes, dataLotAndDateTimes);
+  const columnsAppointment = columnsTableAppointment(setSelectedTimes, setDataLotAndDateTimes, dataLotAndDateTimes);
+
+  useEffect(() => {
+    if (dataSource.length > 0) {
+      getNextLote();
+    }
+  }, [dataSource, dataLotAndDateTimes, nextLote, setNextLote, getNextLote]);
+
+  const addLoteDateAndTime = (lote, date, time) => {
+    setDataLotAndDateTimes([
+      ...dataLotAndDateTimes,
+      {
+        lote,
+        fecha: `${date.format("DD/MM/YYYY")} at ${time}`,
+      },
+    ]);
+  };
+
+  return (
+    <div style={{ maxWidth: "90%", margin: "auto", padding: 20 }}>
+      <Card bordered>
         {/* Header */}
         <Row justify="center">
           <Col span={24} style={{ textAlign: "center" }}>
-            <img src={matusColor} alt="Matus" style={{ width: 200 }} />
+            <img
+              src={matusColor}
+              alt="Matus"
+              style={{ width: 200, maxWidth: "100%" }}
+            />
           </Col>
         </Row>
+
         <Divider />
-        <Row gutter={16} align="middle">
+
+        <Row gutter={[16, 16]} justify="center">
           {/* Carrier Information */}
-          <Col span={6}>
+          <Col xs={24} sm={24} md={8} lg={6}>
             <Card
               loading={isLoaded}
               bordered
@@ -180,50 +226,65 @@ function TransportApp() {
                 <Text type="danger">{error.messageErrorDataCarrier}</Text>
               }
             >
-              {" "}
               <Text strong>Company Name:</Text>
-              <p>{dataCarrier?.nomComp ? dataCarrier.nomComp : "N/A"}</p>
+              <p>{dataCarrier?.nomComp || "N/A"}</p>
               <Text strong>Driver's Name:</Text>
-              <p>{dataCarrier?.contacto ? dataCarrier.contacto : "N/A"}</p>
+              <p>{dataCarrier?.contacto || "N/A"}</p>
               <Text strong>Phone:</Text>
-              <p>{dataCarrier?.telefono ? dataCarrier.telefono : "N/A"}</p>
+              <p>{dataCarrier?.telefono || "N/A"}</p>
               <Text strong>Email:</Text>
-              <p>{dataCarrier?.email ? dataCarrier.email : "N/A"}</p>
+              <p>{dataCarrier?.email || "N/A"}</p>
             </Card>
           </Col>
 
-          {/* Date Selection */}
-          <Col span={12}>
+          {/* Appointment Information */}
+          <Col xs={24} sm={24} md={12} lg={12}>
             <Card bordered title="Appointment Information" loading={isLoaded}>
-              <Text strong>Quantity</Text>
-              <Input
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-              />
-              <Text strong>Select a date:</Text>
-              <DatePicker
-                onChange={(date) => setSelectedDate(date)}
-                disabledDate={(current) =>
-                  current && current < dayjs().startOf("day")
-                }
-                style={{ width: "100%" }}
-                format="DD/MM/YYYY"
-                value={selectedDate}
-              />
-              <Text strong>Description</Text>
-              <Input.TextArea
-                type="textarea"
-                placeholder="Description of the load"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-              />
-
               <Space
                 direction="vertical"
                 size="middle"
                 style={{ width: "100%" }}
               >
+                <Text strong>Select a date:</Text>
+                <DatePicker
+                  onChange={(date) => setSelectedDate(date)}
+                  disabledDate={(current) =>
+                    current && current < dayjs().startOf("day")
+                  }
+                  style={{ width: "100%" }}
+                  format="DD/MM/YYYY"
+                  value={selectedDate}
+                />
+                <Text strong>Lot list:</Text>
+                {/* agregar una nota */}
+
+                {/* <Input.TextArea
+                  placeholder="Description of the load"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={4}
+                /> */}
+                <Space.Compact style={{ width: "100%" }}>
+                  <Input
+                    placeholder="Number of lots"
+                    value={numberLote}
+                    onChange={(e) => setNumberLote(e.target.value)}
+                  />
+                  <Button
+                    type="primary"
+                    onClick={addLot}
+                    disabled={dataSource.length === 5}
+                  >
+                    Add Lot
+                  </Button>
+                </Space.Compact>
+                <Table
+                  columns={columns}
+                  dataSource={dataSource}
+                  pagination={false}
+                  bordered
+                />
+
                 {error.status && (
                   <Text type="danger">{error.messageErrorTime}</Text>
                 )}
@@ -232,39 +293,54 @@ function TransportApp() {
           </Col>
 
           {/* Time Selection */}
-          <Col span={6}>
-            <Card bordered title="Select a time" loading={isLoadedTime}>
+          <Col xs={24} sm={24} md={8} lg={6}>
+            <Card
+              bordered
+              title={
+                <div style={{ textAlign: "center" }}>
+                  <Text strong>Select a time for the batch:</Text>
+                  <br />
+
+                  {nextLote?.lote ? (
+                    <Text type="success">{nextLote.lote}</Text>
+                  ) : (
+                    <Text type="danger">No more lots available</Text>
+                  )}
+                </div>
+              }
+              loading={isLoadedTime}
+            >
               <Space
                 direction="vertical"
                 size="middle"
                 style={{
                   width: "100%",
                   display: "grid",
-                  gridTemplateColumns: "repeat(2, 1fr)",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))",
                   gap: "5px",
                   overflowY: availableTimes.length > 4 ? "scroll" : "hidden",
-                  height: availableTimes.length > 4 ? "250px" : "auto",
+                  maxHeight: availableTimes.length > 4 ? "250px" : "auto",
                   padding: "10px",
                 }}
               >
                 {availableTimes.map((time) => {
-                  let buttonType = "default";
-                  if (!availableTimesFiltered.includes(time)) {
-                    buttonType = "dashed";
-                  } else if (selectedTimes.includes(time)) {
-                    buttonType = "primary";
-                  }
+                  const isAvailable = availableTimesFiltered.includes(time);
+                  const buttonType = selectedTimes.includes(time)
+                    ? "primary"
+                    : isAvailable
+                    ? "default"
+                    : "dashed";
 
                   return (
                     <Button
-                      disabled={!availableTimesFiltered.includes(time)}
                       key={time}
+                      disabled={!isAvailable}
                       type={buttonType}
-                      onClick={() => onSelectedTime(time)}
-                      style={{
-                        width: "100%",
-                        textAlign: "center",
+                      onClick={() => {
+                        onSelectedTime(time);
+                        addLoteDateAndTime(nextLote.lote, selectedDate, time);
                       }}
+                      style={{ width: "100%", textAlign: "center" }}
                     >
                       {time}
                     </Button>
@@ -279,10 +355,16 @@ function TransportApp() {
         {selectedDate && selectedTimes?.length > 0 && (
           <Card style={{ marginTop: 20, textAlign: "center" }}>
             <Text strong>Selected Appointment:</Text>
-            <p>
+            {/* <p>
               {selectedDate.format("DD/MM/YYYY")} at {selectedTimes.join(", ")}
             </p>
-            <Button type="primary">Confirm Appointment</Button>
+            <Button type="primary">Confirm Appointment</Button> */}
+            <Table
+              columns={columnsAppointment}
+              dataSource={dataLotAndDateTimes}
+              pagination={false}
+              bordered
+            />
           </Card>
         )}
       </Card>
