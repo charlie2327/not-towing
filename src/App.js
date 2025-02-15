@@ -7,8 +7,9 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import TransportPage from "./pages/Transport/TransportPage";
-import NotFoundPage from "./pages/NotFound/NotFoundPage";
+import CreateAppointment from "./pages/Appointments/create";
+import NotFound from "./pages/Errors/404";
+import "./App.css";
 
 // Configuración del enrutador
 function App() {
@@ -16,10 +17,11 @@ function App() {
     <Router>
       <Routes>
         {/* Ruta principal para /transporte */}
-        <Route path="/transport" element={<TransportPage />} />
-        <Route path="/not-found" element={<NotFoundPage />} />
+        <Route path="/transporte" element={<CreateAppointment />} />
         {/* Redirigir la ruta raíz a /transporte */}
-        <Route path="/" element={<Navigate to="/transport" replace />} />
+        <Route path="/" element={<Navigate to="/transporte" replace />} />
+        {/* Ruta para manejar errores 404 */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );

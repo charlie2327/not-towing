@@ -89,3 +89,37 @@ export const columnsTableAppointment = (setSelectedTimes, setDataLotAndDateTimes
     },
   },
 ];
+
+export const steps = [
+  {
+    title: 'Select Date',
+    content: 'First-content',
+  },
+  {
+    title: 'Appointment Information',
+    content: 'Second-content',
+  },
+  {
+    title: 'Select a time for the batch',
+    content: 'Third-content',
+  },
+  {
+    title: 'Confirm the appointment',
+    content: 'Last-content',
+  }
+];
+
+
+export const parseDate = dateString => {
+  // Dividir la fecha y la hora
+  const [datePart, timePart] = dateString.split(" at ");
+
+  // Extraer día, mes y año
+  const [day, month, year] = datePart.split("/").map(Number);
+
+  // Extraer hora y minutos
+  const [hours, minutes] = timePart.split(":").map(Number);
+
+  // Crear el objeto Date (meses en JS van de 0 a 11)
+  return new Date(year, month - 1, day, hours, minutes);
+}
