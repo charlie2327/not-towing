@@ -10,6 +10,7 @@ import {
 import CreateAppointment from "./pages/Appointments/create";
 import NotFound from "./pages/Errors/404";
 import "./App.css";
+import Success from "./pages/Success/Success";
 
 // Configuración del enrutador
 function App() {
@@ -17,7 +18,8 @@ function App() {
     <Router>
       <Routes>
         {/* Ruta principal para /transporte */}
-        <Route path="/transporte" element={<CreateAppointment />} />
+        <Route path="/transport" element={<CreateAppointment />} />
+        <Route path="/success" element={<Success />} />
         {/* Redirigir la ruta raíz a /transporte */}
         <Route path="/" element={<Navigate to="/transporte" replace />} />
         {/* Ruta para manejar errores 404 */}

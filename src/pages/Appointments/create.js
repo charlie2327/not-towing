@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect} from "react";
 import {
   DatePicker,
   Button,
@@ -16,29 +16,35 @@ import {
 } from "antd";
 import dayjs from "dayjs";
 import "antd/dist/reset.css";
-import { useLocation } from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import {
   decryptToken,
   getDataCarrier,
   validateAviableTime,
   saveAppointment,
 } from "../../services";
-import { headerTable, columnsTableAppointment, steps, parseDate } from "../../utils";
+import {headerTable, columnsTableAppointment, steps, parseDate} from "../../utils";
 import matusColor from "../../assets/matuscolor.png";
 import NotFound from "../Errors/404";
-const { Text } = Typography;
+
+const {Text} = Typography;
 
 const CreateAppointment = () => {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTimes, setSelectedTimes] = useState([]);
   const [dataLotAndDateTimes, setDataLotAndDateTimes] = useState([]);
   const [current, setCurrent] = useState(0);
+  const [loadingBtn, setLoadingBtn] = useState(false);
+
   const next = () => {
     setCurrent(current + 1);
   };
+
   const prev = () => {
     setCurrent(current - 1);
   };
+
   const items = steps.map((item) => ({
     key: item.title,
     title: item.title,
@@ -51,12 +57,14 @@ const CreateAppointment = () => {
     type: null,
     idOrigin: null,
   });
+
   const [error, setError] = useState({
     status: false,
     messageErrorDecrypt: null,
     messageErrorDataCarrier: null,
     messageErrorTime: null,
   });
+
   const [dataCarrier, setDataCarrier] = useState(null);
   const [numberLote, setNumberLote] = useState(null);
   const [availableTimesFiltered, setAvailableTimesFiltered] = useState([]);
@@ -72,10 +80,8 @@ const CreateAppointment = () => {
     if (token && dataSource.length === 0) {
       decryptToken(token)
         .then((dataDescryp) => {
-          const { status, data } = dataDescryp;
-          console.log(data, "data");
+          const {status, data} = dataDescryp;
           const [lote, idCarrier, idOrigin, interval] = data.split(":");
-          console.log(lote, idCarrier, idOrigin, interval, "data Inicial");
 
           setTokenDecrypted({
             status,
@@ -84,22 +90,21 @@ const CreateAppointment = () => {
             interval,
             idOrigin,
           });
+
           //mandar el lote al array de data
-          setDataSource([...dataSource, { key: 1, lote }]);
+          setDataSource([...dataSource, {key: 1, lote}]);
           setError({
             status: false,
             messageErrorDecrypt: null,
           });
         })
         .catch((error) => {
-          console.error(error);
           setError({
             status: true,
             messageErrorDecrypt: error.message,
           });
         })
         .finally(() => {
-          console.log("finally");
           setIsLoaded(false);
         });
     }
@@ -110,7 +115,7 @@ const CreateAppointment = () => {
       setIsLoaded(true);
       getDataCarrier(tokenDecrypted.idCarrier)
         .then((dataCarrier) => {
-          const { data } = dataCarrier;
+          const {data} = dataCarrier;
           setDataCarrier(data);
           setError({
             status: false,
@@ -118,14 +123,12 @@ const CreateAppointment = () => {
           });
         })
         .catch((error) => {
-          console.error(error);
           setError({
             status: true,
             messageErrorDataCarrier: error.message,
           });
         })
         .finally(() => {
-          console.log("finally");
           setIsLoaded(false);
         });
     }
@@ -137,7 +140,7 @@ const CreateAppointment = () => {
       const dateNumber = dayjs(selectedDate).valueOf();
       validateAviableTime(tokenDecrypted.idOrigin, dateNumber)
         .then((dataTime) => {
-          const { status, list } = dataTime;
+          const {status, list} = dataTime;
 
           if (status) {
             setAvailableTimesFiltered(list);
@@ -148,14 +151,12 @@ const CreateAppointment = () => {
           }
         })
         .catch((error) => {
-          console.error(error);
           setError({
             status: true,
             messageErrorTime: error.message,
           });
         })
         .finally(() => {
-          console.log("finally");
           setIsLoadedTime(false);
         });
     } else {
@@ -248,7 +249,7 @@ const CreateAppointment = () => {
     if (numberLote) {
       setDataSource([
         ...dataSource,
-        { key: dataSource.length + 1, lote: numberLote },
+        {key: dataSource.length + 1, lote: numberLote},
       ]);
       setNumberLote(null);
     }
@@ -270,14 +271,14 @@ const CreateAppointment = () => {
     {
       content: (
         <Col xs={24} sm={24} md={24} lg={24}>
-          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
-            <Text strong>Select a date:</Text>
+          <Space direction="vertical" size="middle" style={{width: "100%"}}>
+            <Text strong>Please select the date of your appointment:</Text>
             <DatePicker
               onChange={(date) => setSelectedDate(date)}
               disabledDate={(current) =>
                 current && current < dayjs().startOf("day")
               }
-              style={{ width: "100%" }}
+              style={{width: "100%"}}
               format="DD/MM/YYYY"
               value={selectedDate}
             />
@@ -288,8 +289,12 @@ const CreateAppointment = () => {
     {
       content: (
         <Col xs={24} sm={24} md={24} lg={24}>
-          <Text strong>Lot list:</Text>
-          <Space.Compact style={{ width: "100%", marginBottom: 10 }}>
+          <div style={{marginBottom: '5px'}}>
+            <Text strong>
+              Optional: You can add more lot's number if you want to schedule more than one vehicle for your appointment
+            </Text>
+          </div>
+          <Space.Compact style={{width: "100%", marginBottom: 10}}>
             <Input
               placeholder="Number of lots"
               value={numberLote}
@@ -303,6 +308,9 @@ const CreateAppointment = () => {
               Add Lot
             </Button>
           </Space.Compact>
+          <div style={{marginBottom: '5px'}}>
+            <Text strong>Lot list:</Text>
+          </div>
           <Table
             columns={columns}
             dataSource={dataSource}
@@ -320,18 +328,18 @@ const CreateAppointment = () => {
           <Card
             bordered
             title={
-              <div style={{ textAlign: "center" }}>
+              <div style={{textAlign: "center"}}>
                 <Text strong>Select a time for the batch:</Text>
-                <br />
+                <br/>
                 <Space
                   size="middle"
-                  style={{ marginTop: 10, marginBottom: 10 }}
+                  style={{marginTop: 10, marginBottom: 10}}
                 >
                   {dataSource.map((item) => {
                     return (
                       <Badge
                         key={item.lote}
-                        style={{ backgroundColor: "#52c41a" }}
+                        style={{backgroundColor: "#52c41a"}}
                         count={item.lote}
                       />
                     );
@@ -367,7 +375,7 @@ const CreateAppointment = () => {
                     onClick={() => {
                       onSelectedTime(time);
                     }}
-                    style={{ width: "100%", textAlign: "center" }}
+                    style={{width: "100%", textAlign: "center"}}
                   >
                     {time}
                   </Button>
@@ -381,7 +389,7 @@ const CreateAppointment = () => {
     {
       content: (
         <Col xs={24} sm={24} md={24} lg={24}>
-          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+          <Space direction="vertical" size="middle" style={{width: "100%"}}>
             <Text strong>Selected Appointment:</Text>
             <Table
               columns={columnsAppointment}
@@ -396,50 +404,58 @@ const CreateAppointment = () => {
   ];
 
   const onSaveAppointment = () => {
-
-    const data = {
-        lotes: dataLotAndDateTimes.map((item) => {
-            return {
-                lote: item.lote,
-                fecha: dayjs(parseDate(item.fecha)).format("YYYY-MM-DDTHH:mm:ss"),
-            };
-        }),
-        token: token,
+    if (dataLotAndDateTimes.length === 0) {
+      message.error("There is no batch selected, please add one and continue with the appointment");
+      return;
     }
 
+    const data = {
+      lotes: dataLotAndDateTimes.map((item) => {
+        return {
+          lote: item.lote,
+          fecha: dayjs(parseDate(item.fecha)).format("YYYY-MM-DDTHH:mm:ss"),
+        };
+      }),
+      token: token,
+    }
+
+    setLoadingBtn(true);
     saveAppointment(data)
       .then((data) => {
-        const { status } = data;
+        const {status} = data;
         if (status) {
-          message.success("Appointment saved successfully.");
+          navigate('/success');
         } else {
           message.error("Error saving appointment.");
         }
       })
-      .catch((error) => {
+      .catch(() => {
         message.error("Error saving appointment.");
+      })
+      .finally(() => {
+        setLoadingBtn(false);
       });
   };
 
   if (!token || error.messageErrorDecrypt) {
-    return <NotFound />;
+    return <NotFound/>;
   }
 
   return (
-    <div style={{ maxWidth: "90%", margin: "auto", padding: 20 }}>
+    <div style={{maxWidth: "90%", margin: "auto", padding: 20}}>
       <Card bordered>
         {/* Header */}
         <Row justify="center">
-          <Col span={24} style={{ textAlign: "center" }}>
+          <Col span={24} style={{textAlign: "center"}}>
             <img
               src={matusColor}
               alt="Matus"
-              style={{ width: 200, maxWidth: "100%" }}
+              style={{width: 200, maxWidth: "100%"}}
             />
           </Col>
         </Row>
 
-        <Divider />
+        <Divider/>
 
         <Row gutter={[16, 16]} justify="center">
           <Col xs={24} sm={24} md={24} lg={24}>
@@ -472,8 +488,8 @@ const CreateAppointment = () => {
             </Card>
           </Col>
         </Row>
-        <Card bordered style={{ marginTop: 20 }}>
-          <Steps current={current} items={items} />
+        <Card bordered style={{marginTop: 20}}>
+          <Steps current={current} items={items}/>
 
           <Row
             style={{
@@ -506,6 +522,7 @@ const CreateAppointment = () => {
             )}
             {current === steps.length - 1 && (
               <Button
+                loading={loadingBtn}
                 type="primary"
                 onClick={() => onSaveAppointment()}
               >

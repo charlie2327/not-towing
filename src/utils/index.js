@@ -52,7 +52,7 @@ export const headerTable = (setDataSource, setSelectedTimes, setDataLotAndDateTi
 
 export const columnsTableAppointment = (setSelectedTimes, setDataLotAndDateTimes, dataLotAndDateTimes) => [
   {
-    title: "Lote",
+    title: "# Lot",
     dataIndex: "lote",
   },
   {
