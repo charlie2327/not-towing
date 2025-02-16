@@ -20,8 +20,8 @@ import {useLocation, useNavigate} from "react-router-dom";
 import {
   decryptToken,
   getDataCarrier,
-  validateAviableTime,
-  saveAppointment,
+  validateAvailableTime,
+  saveAppointment, getDataVehicle,
 } from "../../services";
 import {headerTable, columnsTableAppointment, steps, parseDate} from "../../utils";
 import matusColor from "../../assets/matuscolor.png";
@@ -91,8 +91,6 @@ const CreateAppointment = () => {
             idOrigin,
           });
 
-          //mandar el lote al array de data
-          setDataSource([...dataSource, {key: 1, lote}]);
           setError({
             status: false,
             messageErrorDecrypt: null,
@@ -113,10 +111,29 @@ const CreateAppointment = () => {
   useEffect(() => {
     if (tokenDecrypted.status) {
       setIsLoaded(true);
-      getDataCarrier(tokenDecrypted.idCarrier)
+      getDataCarrier(tokenDecrypted.idCarrier, token)
         .then((dataCarrier) => {
           const {data} = dataCarrier;
           setDataCarrier(data);
+          setError({
+            status: false,
+            messageErrorDataCarrier: null,
+          });
+        })
+        .catch((error) => {
+          setError({
+            status: true,
+            messageErrorDataCarrier: error.message,
+          });
+        })
+        .finally(() => {
+          setIsLoaded(false);
+        });
+
+      getDataVehicle(tokenDecrypted.lote, token)
+        .then((dataVehicle) => {
+          const {data} = dataVehicle;
+          setDataSource([{key: 1, lote: tokenDecrypted.lote, description: data.descripcion}]);
           setError({
             status: false,
             messageErrorDataCarrier: null,
@@ -138,7 +155,7 @@ const CreateAppointment = () => {
     if (selectedDate) {
       setIsLoadedTime(true);
       const dateNumber = dayjs(selectedDate).valueOf();
-      validateAviableTime(tokenDecrypted.idOrigin, dateNumber)
+      validateAvailableTime(tokenDecrypted.idOrigin, dateNumber)
         .then((dataTime) => {
           const {status, list} = dataTime;
 
@@ -182,6 +199,7 @@ const CreateAppointment = () => {
       setDataLotAndDateTimes([
         {
           lote: dataSource[0].lote, // Lote correspondiente
+          description: dataSource[0].description,
           fecha: `${selectedDate.format("DD/MM/YYYY")} at ${time}`,
         },
       ]);
@@ -233,6 +251,7 @@ const CreateAppointment = () => {
         // Agregar los tiempos seleccionados a dataLotAndDateTimes
         const newDataLotAndDateTimes = selected.map((selectedTime, i) => ({
           lote: dataSource[i].lote, // Lote correspondiente según la posición
+          description: dataSource[i].description,
           fecha: `${selectedDate.format("DD/MM/YYYY")} at ${selectedTime}`,
         }));
 
@@ -245,13 +264,22 @@ const CreateAppointment = () => {
     }
   };
 
-  const addLot = () => {
+  const addLot = async () => {
     if (numberLote) {
-      setDataSource([
-        ...dataSource,
-        {key: dataSource.length + 1, lote: numberLote},
-      ]);
-      setNumberLote(null);
+      setLoadingBtn(true);
+      const data = await getDataVehicle(numberLote, token);
+      setLoadingBtn(false);
+
+      if (data && data.status) {
+        setDataSource([
+          ...dataSource,
+          { key: dataSource.length + 1, lote: numberLote, description: data.data.descripcion },
+        ]);
+        setNumberLote(null);
+      } else {
+        setNumberLote(null);
+        message.error(data.message);
+      }
     }
   };
 
@@ -303,6 +331,7 @@ const CreateAppointment = () => {
             <Button
               type="primary"
               onClick={addLot}
+              loading={loadingBtn}
               disabled={dataSource.length === 8}
             >
               Add Lot
@@ -507,6 +536,7 @@ const CreateAppointment = () => {
           >
             {current > 0 && (
               <Button
+                loading={loadingBtn}
                 style={{
                   margin: "0 8px",
                 }}
@@ -516,7 +546,7 @@ const CreateAppointment = () => {
               </Button>
             )}
             {current < steps.length - 1 && (
-              <Button type="primary" onClick={() => next()}>
+              <Button type="primary" loading={loadingBtn} onClick={() => next()}>
                 Next
               </Button>
             )}

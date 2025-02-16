@@ -7,13 +7,19 @@ export const decryptToken = async (token) => {
   return response.json();
 };
 
-export const getDataCarrier = async (idCarrier) => {
-  const endpoint = `${server}Public/transporte/${idCarrier}`;
-  const response = await ApiService.get(endpoint);
+export const getDataCarrier = async (idCarrier, token) => {
+  const endpoint = `${server}Public/transporteCita/transporte/${idCarrier}`;
+  const response = await ApiService.post(endpoint, {token: token});
   return response.json();
 };
 
-export const validateAviableTime = async (idOrigin, date) => {
+export const getDataVehicle = async (lote, token) => {
+  const endpoint = `${server}Public/transporteCita/vehiculo/${lote}`;
+  const response = await ApiService.post(endpoint, {token: token});
+  return response.json();
+};
+
+export const validateAvailableTime = async (idOrigin, date) => {
   const endpoint = `${server}Public/transporteCita/${idOrigin}/${date}`;
   const response = await ApiService.get(endpoint);
   return response.json();

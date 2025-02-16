@@ -6,8 +6,12 @@ export const headerTable = (setDataSource, setSelectedTimes, setDataLotAndDateTi
     dataIndex: "key",
   },
   {
-    title: "Lote",
+    title: "# Lot",
     dataIndex: "lote",
+  },
+  {
+    title: "Description",
+    dataIndex: "description",
   },
   {
     title: "Actions",
@@ -54,6 +58,10 @@ export const columnsTableAppointment = (setSelectedTimes, setDataLotAndDateTimes
   {
     title: "# Lot",
     dataIndex: "lote",
+  },
+  {
+    title: "Description",
+    dataIndex: "description",
   },
   {
     title: "Date and time",
